@@ -1,0 +1,17 @@
+{
+  "name": "service-book",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Maintenance log and service schedule for a 2016 Chevrolet Equinox and a 2022 Honda Odyssey Touring.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.1"
+  }
+}

@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: service-book
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: service-book-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: APP_PASSCODE
+        sync: false
+
+databases:
+  - name: service-book-db
+    plan: free
+    databaseName: service_book
+    user: service_book

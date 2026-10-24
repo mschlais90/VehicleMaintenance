@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Equinox &amp; Odyssey Service Book</title>
+<meta name="theme-color" content="#0E5C70">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Service Book">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one-column phone app. Vehicle switcher, odometer card, "what's due" list, history, bottom sheet for logging. */
+:root {
+  --bg: #ECEFEE;
+  --surface: #FFFFFF;
+  --surface-2: #F5F7F6;
+  --ink: #15201E;
+  --muted: #5A6865;
+  --line: #D2D9D7;
+  --accent: #0E5C70;
+  --accent-ink: #FFFFFF;
+  --odo-bg: #15201E;
+  --odo-fg: #F2F5F4;
+  --bad: #B3261E;
+  --bad-bg: #FBE9E7;
+  --warn: #9A5B00;
+  --warn-bg: #FCF1DE;
+  --good: #2C7349;
+  --good-bg: #E5F3EA;
+  --none: #5B5F78;
+  --none-bg: #ECEDF3;
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1514; --surface: #182120; --surface-2: #1E2827; --ink: #E5ECEA; --muted: #95A4A1; --line: #2B3735;
+    --accent: #5DB2C9; --accent-ink: #0B1716; --odo-bg: #070B0A; --odo-fg: #EAF2F0;
+    --bad: #F28A80; --bad-bg: #3A1D1A; --warn: #F0B65C; --warn-bg: #36290F; --good: #73C99A; --good-bg: #16301F;
+    --none: #A9AECB; --none-bg: #262A3A; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1514; --surface: #182120; --surface-2: #1E2827; --ink: #E5ECEA; --muted: #95A4A1; --line: #2B3735;
+  --accent: #5DB2C9; --accent-ink: #0B1716; --odo-bg: #070B0A; --odo-fg: #EAF2F0;
+  --bad: #F28A80; --bad-bg: #3A1D1A; --warn: #F0B65C; --warn-bg: #36290F; --good: #73C99A; --good-bg: #16301F;
+  --none: #A9AECB; --none-bg: #262A3A; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: calc(12px + env(safe-area-inset-top, 0px)) calc(96px + env(safe-area-inset-bottom, 0px));
+  margin: 0; -webkit-text-size-adjust: 100%;
+}
+[hidden] { display: none !important; }
+.login { position: fixed; inset: 0; z-index: 40; background: var(--bg); display: flex; align-items: center; justify-content: center;
+  padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(16px, env(safe-area-inset-left, 0px)); }
+.login form { width: 100%; max-width: 360px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.login p { margin: 0; color: var(--muted); font-size: .9rem; }
+.login input { font-size: 16px; }
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+h1 { font-size: 1.15rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+h2 { font-size: 1.35rem; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.label { font-size: .72rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 600; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* top bar */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.banner { background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-size: .9rem; }
+.banner[hidden] { display: none; }
+
+/* vehicle switcher */
+.switch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.switch button { border: 0; background: transparent; border-radius: 9px; padding: 10px 8px; text-align: left; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.switch button .yr { font-size: .75rem; color: var(--muted); }
+.switch button .nm { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; line-height: 1.1; }
+.switch button .ct { font-size: .75rem; color: var(--muted); }
+.switch button[aria-selected="true"] { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.switch button .ct.hot { color: var(--bad); font-weight: 600; }
+
+/* odometer card */
+.odo-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.odo-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.odo-head .sub { color: var(--muted); font-size: .85rem; }
+.odo-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.odo { display: inline-flex; gap: 3px; background: var(--odo-bg); padding: 6px; border-radius: 8px; }
+.odo span { font-family: var(--font-mono); font-weight: 600; color: var(--odo-fg); font-size: 1.45rem; width: 1.15em; text-align: center; padding: 2px 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 45%, rgba(0,0,0,.25)); border-radius: 3px; }
+.odo span.blank { color: rgba(255,255,255,.22); }
+.odo-unit { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); }
+.btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 8px 12px; font-weight: 500; font-size: .9rem; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.danger { color: var(--bad); border-color: var(--bad); background: transparent; }
+.btn.ghost { background: transparent; }
+.inline-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.inline-form input { width: 9em; }
+input, select, textarea { background: var(--surface-2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 10px; min-width: 0; }
+details.prefs { border-top: 1px solid var(--line); padding-top: 10px; }
+details.prefs summary { cursor: pointer; color: var(--muted); font-size: .88rem; }
+.prefs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.prefs-grid label { display: flex; flex-direction: column; gap: 4px; font-size: .85rem; min-width: 0; }
+.prefs-note { grid-column: 1 / -1; font-size: .82rem; color: var(--muted); margin: 0; }
+
+/* section */
+.section { display: flex; flex-direction: column; gap: 10px; }
+.section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.section-head p { margin: 0; color: var(--muted); font-size: .85rem; }
+
+/* schedule items */
+.sched { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.item { padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; border-top: 1px solid var(--line); }
+.item:first-child { border-top: 0; }
+.item .name { font-weight: 600; min-width: 0; }
+.item .name small { display: block; font-weight: 400; color: var(--muted); font-size: .8rem; margin-top: 1px; }
+.pill { justify-self: end; align-self: start; font-size: .72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.overdue { color: var(--bad); background: var(--bad-bg); }
+.pill.soon { color: var(--warn); background: var(--warn-bg); }
+.pill.ok { color: var(--good); background: var(--good-bg); }
+.pill.none { color: var(--none); background: var(--none-bg); }
+.bar { grid-column: 1 / -1; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; border: 1px solid var(--line); }
+.bar i { display: block; height: 100%; }
+.bar i.overdue { background: var(--bad); } .bar i.soon { background: var(--warn); } .bar i.ok { background: var(--good); } .bar i.none { background: var(--none); }
+.item .meta { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: .82rem; color: var(--muted); }
+.item .meta b { color: var(--ink); font-weight: 600; }
+.item .actions { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.item .why { grid-column: 1 / -1; font-size: .82rem; color: var(--muted); margin: 0; }
+.item .why[hidden] { display: none; }
+.linkish { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 500; font-size: .85rem; }
+.code { font-family: var(--font-mono); font-size: .75rem; border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; color: var(--muted); }
+
+/* tips */
+.tips { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.tips ul { margin: 8px 0 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 6px; font-size: .9rem; }
+.tips summary { cursor: pointer; font-weight: 600; }
+
+/* history */
+.history { display: flex; flex-direction: column; gap: 8px; }
+.log { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.log-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.log-title { font-weight: 600; min-width: 0; }
+.log-date { font-size: .82rem; color: var(--muted); white-space: nowrap; }
+.log-sub { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: .83rem; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font-size: .75rem; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
+.log-notes { font-size: .88rem; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.log-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 18px 16px; color: var(--muted); font-size: .9rem; }
+.filter { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 10px; font-size: .8rem; }
+.filter button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* fab */
+.fab { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background: linear-gradient(180deg, transparent, var(--bg) 35%); display: flex; justify-content: center; z-index: 5; pointer-events: none; }
+.fab button { pointer-events: auto; width: 100%; max-width: 640px; padding: 14px; font-size: 1rem; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+
+/* sheet */
+.scrim { position: fixed; inset: 0; background: rgba(5,10,9,.45); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--surface); width: 100%; max-width: 640px; max-height: 92%; overflow-y: auto; border-radius: 16px 16px 0 0;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  display: flex; flex-direction: column; gap: 14px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field > span { font-size: .85rem; font-weight: 500; }
+.field small { color: var(--muted); font-size: .78rem; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px; }
+.checks label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 6px 11px; font-size: .85rem; cursor: pointer; }
+.checks input { margin: 0; accent-color: var(--accent); }
+.checks label:has(input:checked) { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.checks-group { display: flex; flex-direction: column; gap: 6px; }
+.form-error { color: var(--bad); font-size: .88rem; margin: 0; }
+.sheet-foot { display: flex; gap: 10px; }
+.sheet-foot .btn { flex: 1; padding: 12px; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg);
+  padding: 9px 16px; border-radius: 999px; font-size: .9rem; z-index: 30; }
+footer { color: var(--muted); font-size: .78rem; }
+.qr-card { display: none; }
+@media (min-width: 1000px) and (hover: hover) and (pointer: fine) {
+  .qr-card { display: flex; flex-direction: column; gap: 8px; position: fixed; top: calc(16px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+    width: 190px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; z-index: 4; }
+  .qr-card[hidden] { display: none; }
+}
+.qr-card h3 { font-size: 1rem; }
+.qr-card p { margin: 0; font-size: .8rem; color: var(--muted); }
+.qr-img { background: #FFFFFF; border-radius: 8px; padding: 8px; line-height: 0; }
+.qr-img svg { width: 100%; height: auto; display: block; }
+@media (max-width: 380px) { .prefs-grid, .row2 { grid-template-columns: 1fr; } .odo span { font-size: 1.2rem; } }
+@media (prefers-reduced-motion: no-preference) { .bar i { transition: width .4s ease; } }
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <h1>Service Book</h1>
+    <span class="label" id="syncState">Connecting…</span>
+  </div>
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="switch" role="tablist" id="switch"></div>
+
+  <section class="odo-card" id="odoCard"></section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>What's due</h2>
+      <p id="schedNote"></p>
+    </div>
+    <div class="sched" id="sched"></div>
+  </section>
+
+  <details class="tips" id="tips"></details>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>History</h2>
+      <p id="histCount"></p>
+    </div>
+    <div class="filter" id="filter"></div>
+    <div class="history" id="history"></div>
+  </section>
+
+  <footer>Intervals follow GM's published schedule for the Equinox and Honda's Maintenance Minder for the Odyssey. Mileages for Minder items are estimates. When the van's dash shows a Minder code, that code takes priority. Oil and brakes are logged here but not tracked in "What's due".</footer>
+</div>
+
+<aside class="qr-card" id="qrCard" aria-label="Open on your phone">
+  <h3>Open on your phone</h3>
+  <div class="qr-img" id="qrImg"></div>
+  <p>Scan with your phone's camera, then use Add to Home Screen.</p>
+</aside>
+
+<div class="login" id="login" hidden>
+  <form id="loginForm">
+    <h2>Service Book</h2>
+    <p>Enter your passcode. This phone stays signed in for a year.</p>
+    <input id="passcode" type="password" autocomplete="current-password" placeholder="Passcode" aria-label="Passcode" required>
+    <p class="form-error" id="loginErr" hidden></p>
+    <button class="btn primary" type="submit" id="loginBtn">Sign in</button>
+  </form>
+</div>
+
+<div class="fab"><button class="btn primary" id="addBtn" type="button">+ Log service</button></div>
+<div class="scrim" id="scrim" hidden></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+// ---------- Vehicle-specific schedules ----------
+// miles / months: repeating interval. severeMiles: used when the driving profile is "severe".
+// firstMiles / firstMonths: first service when it differs from later ones. src: where the interval comes from.
+const VEHICLES = {
+  equinox: {
+    id: "equinox", year: 2016, name: "Equinox", full: "2016 Chevrolet Equinox", defaultInService: "2015-10-01", minder: false,
+    schedule: [
+      { id: "cabin_filter", label: "Cabin air filter", miles: 22500, src: "GM schedule", detail: "Replace every 22,500 mi. Replace sooner in dusty areas or if airflow drops. The filter sits behind the glovebox." },
+      { id: "engine_air", label: "Engine air filter", miles: 45000, src: "GM schedule", detail: "Replace every 45,000 mi. Inspect it at each oil change and replace sooner if it's dirty." },
+      { id: "trans_fluid", label: "Transmission fluid", miles: 97500, severeMiles: 45000, src: "GM schedule", detail: "6-speed automatic. Change every 97,500 mi for normal driving, or every 45,000 mi for heavy city traffic, hot weather, hilly terrain, or towing. Use DEXRON-VI." },
+      { id: "spark_plugs", label: "Spark plugs", miles: 97500, src: "GM schedule", detail: "Replace every 97,500 mi. The interval is the same for the 2.4L and the 3.6L V6." },
+      { id: "evap", label: "Evaporative emissions check", miles: 120000, src: "GM schedule", detail: "Inspect the fuel and vapor lines, hoses, and connections every 120,000 mi." },
+      { id: "coolant", label: "Engine coolant", miles: 150000, months: 60, src: "GM schedule", detail: "Drain and refill the DEX-COOL every 150,000 mi or 5 years, whichever comes first. On a 2016 the time limit usually comes first." },
+      { id: "drive_belt", label: "Accessory drive belt", miles: 150000, months: 120, src: "GM schedule", detail: "Inspect for cracks and wear every 150,000 mi or 10 years. Replace it if it squeals or shows cracks." }
+    ],
+    tips: {
+      title: "Equinox watch list",
+      items: [
+        "2.4L engines from this era are known for oil consumption. Check the dipstick every other fill-up, because the oil-life monitor doesn't measure oil level.",
+        "The engine uses a timing chain, so there's no replacement interval. A rattle on cold start can mean the chain has stretched. Get it checked before it gets worse.",
+        "If the AWD system shudders or binds in tight turns, have the rear drive fluid inspected. GM doesn't list a fixed interval for it.",
+        "GM's oil-life monitor sets oil change timing. Reset it after every oil change."
+      ]
+    }
+  },
+  odyssey: {
+    id: "odyssey", year: 2022, name: "Odyssey", full: "2022 Honda Odyssey Touring", defaultInService: "2021-10-01", minder: true,
+    schedule: [
+      { id: "cabin_filter", code: "2", label: "Cabin (dust & pollen) filter", miles: 20000, months: 24, src: "Minder code 2", detail: "Minder code 2. Replace about every 15,000 to 25,000 mi, or once a year if you drive in heavy pollen or dust." },
+      { id: "engine_air", code: "2", label: "Engine air filter", miles: 30000, severeMiles: 15000, src: "Minder code 2", detail: "Minder code 2. Replace about every 30,000 mi, or every 15,000 mi on dusty or gravel roads." },
+      { id: "drive_belt", code: "2", label: "Drive belt inspection", miles: 30000, src: "Minder code 2", detail: "Minder code 2. Inspect the serpentine belt for cracks and check the tensioner." },
+      { id: "trans_fluid", code: "3", label: "Transmission fluid (10-speed)", miles: 30000, severeMiles: 25000, src: "Minder code 3", detail: "Minder code 3. This van has a 10-speed automatic. Use only Honda genuine ATF, because aftermarket fluid can cause shift problems." },
+      { id: "spark_plugs", code: "4", label: "Spark plugs + valve clearance", miles: 105000, src: "Minder code 4", detail: "Minder code 4. Replace the spark plugs. Inspect valve clearance and adjust it only if the valves are noisy." },
+      { id: "timing_belt", label: "Timing belt + water pump", miles: 105000, months: 84, severeMiles: 60000, src: "Honda schedule", detail: "The 3.5L V6 has a timing belt, and a broken belt can damage the engine. Replace it at 105,000 mi or 7 years, or at 60,000 mi if you tow or drive often in extreme heat. Replace the water pump and tensioner at the same time." },
+      { id: "coolant", code: "5", label: "Engine coolant", miles: 60000, months: 60, firstMiles: 120000, firstMonths: 120, src: "Minder code 5", detail: "Minder code 5. The first change is at 120,000 mi or 10 years. After that, change it every 60,000 mi or 5 years. Use Honda Type 2 coolant." }
+    ],
+    tips: {
+      title: "Odyssey watch list",
+      items: [
+        "The Maintenance Minder shows a main letter and sub-codes, such as B12. A means oil only. B means oil, filter, and an inspection. Log the code with each visit so you can see the pattern.",
+        "Minder code 6 (rear differential) doesn't apply because the Odyssey is front-wheel drive. Code 7 is brake fluid, about every 3 years.",
+        "Power sliding doors: keep the door tracks clean and lubricate the rollers once a year. Check for related service bulletins at each dealer visit.",
+        "Ask the dealer about software updates for the 10-speed transmission if shifts feel rough or hesitant.",
+        "Reset the Minder after each service. A shop that skips the reset throws off every interval after it."
+      ]
+    }
+  }
+};
+const COMMON_ITEMS = [
+  { id: "oil", label: "Oil & filter" },
+  { id: "brakes", label: "Brakes (pads/rotors)" },
+  { id: "brake_fluid", label: "Brake fluid" },
+  { id: "battery", label: "Battery" },
+  { id: "tire_rotation", label: "Tire rotation" }
+];
+const ORDER = { overdue: 0, soon: 1, none: 2, ok: 3 };
+const PILL = { overdue: "Overdue", soon: "Due soon", none: "No record", ok: "OK" };
+
+// ---------- State ----------
+const S = { db: null, active: "odyssey", logs: [], vdocs: {}, filter: "all", openWhy: new Set(), editingOdo: false, confirmDelete: null, expanded: null, readOnly: false };
+try { const t = localStorage.getItem("sb.active"); if (VEHICLES[t]) S.active = t; } catch (e) {}
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtMi = n => n == null ? "—" : Math.round(n).toLocaleString("en-US");
+const today = () => { const d = new Date(); return iso(d); };
+function iso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function parse(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+function addMonths(s, n) { const d = parse(s); const day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + n); const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); d.setDate(Math.min(day, last)); return iso(d); }
+function daysBetween(a, b) { return Math.round((parse(b) - parse(a)) / 86400000); }
+function fmtDate(s) { return s ? parse(s).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"; }
+function fmtSpan(days) {
+  const a = Math.abs(days);
+  if (a < 60) return a + " day" + (a === 1 ? "" : "s");
+  const mo = Math.round(a / 30.4);
+  if (mo < 24) return mo + " mo";
+  return (a / 365.25).toFixed(1).replace(/\.0$/, "") + " yr";
+}
+
+function vdoc(id) { return S.vdocs[id] || {}; }
+function profile(id) { return vdoc(id).profile || "normal"; }
+function inService(id) { return vdoc(id).inService || VEHICLES[id].defaultInService; }
+function logsFor(id) { return S.logs.filter(l => l.vehicle === id); }
+function odometer(id) {
+  const vals = logsFor(id).map(l => Number(l.miles) || 0);
+  if (vdoc(id).odometer) vals.push(Number(vdoc(id).odometer));
+  const m = Math.max(0, ...vals);
+  return m > 0 ? m : null;
+}
+function lastFor(id, itemId) {
+  return logsFor(id).filter(l => (l.items || []).includes(itemId))
+    .sort((a, b) => (Number(b.miles) || 0) - (Number(a.miles) || 0) || (b.date || "").localeCompare(a.date || ""))[0] || null;
+}
+
+function status(vid, item) {
+  const odo = odometer(vid);
+  const now = today();
+  const last = lastFor(vid, item.id);
+  const interval = (profile(vid) === "severe" && item.severeMiles) || item.miles || null;
+  let baseMiles, baseDate, dueMiles = null, dueDate = null;
+  if (last) {
+    baseMiles = Number(last.miles) || 0; baseDate = last.date;
+    if (interval) dueMiles = baseMiles + interval;
+    if (item.months) dueDate = addMonths(baseDate, item.months);
+  } else {
+    baseMiles = 0; baseDate = inService(vid);
+    const fm = item.firstMiles ? (profile(vid) === "severe" && item.severeMiles ? Math.min(item.firstMiles, item.severeMiles) : item.firstMiles) : interval;
+    if (fm) dueMiles = fm;
+    const fmo = item.firstMonths || item.months;
+    if (fmo) dueDate = addMonths(baseDate, fmo);
+  }
+  const remMiles = dueMiles != null && odo != null ? dueMiles - odo : null;
+  const remDays = dueDate ? daysBetween(now, dueDate) : null;
+  const spanMiles = dueMiles != null ? dueMiles - baseMiles : null;
+  const spanDays = dueDate ? daysBetween(baseDate, dueDate) : null;
+  let pct = 0;
+  if (remMiles != null && spanMiles) pct = Math.max(pct, 1 - remMiles / spanMiles);
+  if (remDays != null && spanDays) pct = Math.max(pct, 1 - remDays / spanDays);
+  pct = Math.min(1, Math.max(0, pct));
+  let level = "ok";
+  if ((remMiles != null && remMiles < 0) || (remDays != null && remDays < 0)) level = "overdue";
+  else if ((remMiles != null && remMiles <= Math.max(1000, (spanMiles || 0) * 0.1)) || (remDays != null && remDays <= 45)) level = "soon";
+  const pastNew = level === "overdue" && !last;
+  if (!last && level !== "overdue") level = level === "soon" ? "soon" : "none";
+  if (pastNew) level = "overdue";
+  return { last, dueMiles, dueDate, remMiles, remDays, pct, level, noRecord: !last, interval, odoKnown: odo != null };
+}
+
+// ---------- Rendering ----------
+function render() {
+  renderSwitch(); renderOdo(); renderSched(); renderTips(); renderHistory();
+}
+
+function renderSwitch() {
+  $("switch").innerHTML = Object.values(VEHICLES).map(v => {
+    const due = v.schedule.map(i => status(v.id, i).level).filter(l => l === "overdue" || l === "soon").length;
+    return `<button role="tab" type="button" data-v="${v.id}" aria-selected="${S.active === v.id}">
+      <span class="yr">${v.year} ${v.id === "equinox" ? "Chevrolet" : "Honda"}</span>
+      <span class="nm">${esc(v.name)}</span>
+      <span class="ct ${due ? "hot" : ""}">${due ? due + " item" + (due > 1 ? "s" : "") + " need attention" : "Nothing due"}</span>
+    </button>`;
+  }).join("");
+}
+
+function odoDigits(n) {
+  const s = n == null ? "" : String(Math.round(n));
+  const width = Math.max(6, s.length);
+  return s.padStart(width, " ").split("").map(c => c === " " ? `<span class="blank">0</span>` : `<span>${c}</span>`).join("");
+}
+
+function renderOdo() {
+  const v = VEHICLES[S.active], odo = odometer(v.id), d = vdoc(v.id);
+  const asOf = d.odometerDate ? "Updated " + fmtDate(d.odometerDate) : (odo ? "From latest log" : "Not set yet");
+  $("odoCard").innerHTML = `
+    <div class="odo-head"><h2>${esc(v.full)}</h2><span class="sub">${v.minder ? "Honda Maintenance Minder" : "GM Oil Life Monitor + schedule"}</span></div>
+    <div class="odo-row">
+      <div class="odo num" aria-label="Odometer ${odo ? fmtMi(odo) + " miles" : "not set"}">${odoDigits(odo)}</div>
+      <span class="odo-unit">MI<br>${esc(asOf)}</span>
+    </div>
+    ${S.editingOdo ? `
+      <form class="inline-form" id="odoForm">
+        <input id="odoInput" type="number" inputmode="numeric" min="0" step="1" placeholder="Current miles" value="${odo || ""}" aria-label="Current odometer miles">
+        <button class="btn primary" type="submit">Save miles</button>
+        <button class="btn ghost" type="button" data-act="odo-cancel">Cancel</button>
+      </form>` : `<div class="inline-form"><button class="btn" type="button" data-act="odo-edit" ${S.readOnly ? "disabled" : ""}>Update odometer</button></div>`}
+    <details class="prefs">
+      <summary>Vehicle settings · ${profile(v.id) === "severe" ? "Severe" : "Normal"} driving</summary>
+      <div class="prefs-grid">
+        <label>Driving conditions
+          <select id="prefProfile" ${S.readOnly ? "disabled" : ""}>
+            <option value="normal" ${profile(v.id) === "normal" ? "selected" : ""}>Normal</option>
+            <option value="severe" ${profile(v.id) === "severe" ? "selected" : ""}>Severe</option>
+          </select>
+        </label>
+        <label>In-service date
+          <input id="prefInService" type="date" value="${esc(inService(v.id))}" ${S.readOnly ? "disabled" : ""}>
+        </label>
+        <p class="prefs-note">Severe driving means mostly short trips, stop-and-go traffic, hot weather, towing, or dusty roads, and it shortens some intervals. The in-service date is the starting point for time-based items you haven't logged yet.</p>
+      </div>
+    </details>`;
+}
+
+function renderSched() {
+  const v = VEHICLES[S.active];
+  const rows = v.schedule.map(i => ({ i, s: status(v.id, i) }))
+    .sort((a, b) => ORDER[a.s.level] - ORDER[b.s.level] || b.s.pct - a.s.pct);
+  const odoKnown = odometer(v.id) != null;
+  $("schedNote").textContent = odoKnown ? "Sorted by urgency" : "Set the odometer to see mileage items";
+  $("sched").innerHTML = rows.map(({ i, s }) => {
+    let left = "", right = "";
+    if (s.remMiles != null) left = s.remMiles < 0 ? `<b>${fmtMi(-s.remMiles)} mi</b> past due` : `<b>${fmtMi(s.remMiles)} mi</b> to go`;
+    else if (i.miles && !s.odoKnown) left = `Every ${fmtMi(s.interval)} mi`;
+    if (s.remDays != null) {
+      const t = s.remDays < 0 ? `<b>${fmtSpan(s.remDays)}</b> past due` : `<b>${fmtSpan(s.remDays)}</b> left`;
+      left = left ? left + " · " + t : t;
+    }
+    const dueParts = [];
+    if (s.dueMiles != null) dueParts.push(fmtMi(s.dueMiles) + " mi");
+    if (s.dueDate) dueParts.push(fmtDate(s.dueDate));
+    right = dueParts.length ? "Due " + dueParts.join(" or ") : "";
+    const lastTxt = s.last ? `Last done ${fmtDate(s.last.date)}${s.last.miles ? " at " + fmtMi(s.last.miles) + " mi" : ""}` : "No record. Due date assumes it hasn't been done since new.";
+    const pill = s.noRecord && s.level === "overdue" ? "Likely due" : PILL[s.level];
+    const intervalTxt = [i.miles ? (s.interval !== i.miles ? `${fmtMi(s.interval)} mi (severe)` : `${fmtMi(i.miles)} mi`) : null, i.months ? (i.months % 12 === 0 ? (i.months / 12) + " yr" : i.months + " mo") : null].filter(Boolean).join(" / ");
+    return `<div class="item">
+      <div class="name">${esc(i.label)} ${i.code ? `<span class="code" title="Maintenance Minder sub-code">${i.code}</span>` : ""}
+        <small>${esc(intervalTxt)} · ${esc(i.src)}</small></div>
+      <span class="pill ${s.level}">${pill}</span>
+      <div class="bar" aria-hidden="true"><i class="${s.level}" style="width:${Math.round(s.pct * 100)}%"></i></div>
+      <div class="meta"><span>${left || "&nbsp;"}</span><span>${esc(right)}</span></div>
+      <div class="meta"><span>${esc(lastTxt)}</span></div>
+      <p class="why" ${S.openWhy.has(i.id) ? "" : "hidden"}>${esc(i.detail)}</p>
+      <div class="actions">
+        <button class="btn" type="button" data-act="log-item" data-item="${i.id}" ${S.readOnly ? "disabled" : ""}>Log it done</button>
+        <button class="linkish" type="button" data-act="why" data-item="${i.id}" aria-expanded="${S.openWhy.has(i.id)}">${S.openWhy.has(i.id) ? "Hide details" : "Details"}</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderTips() {
+  const t = VEHICLES[S.active].tips;
+  $("tips").innerHTML = `<summary>${esc(t.title)}</summary><ul>${t.items.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+}
+
+function itemLabel(vid, id) {
+  const c = COMMON_ITEMS.find(x => x.id === id); if (c) return c.label;
+  const s = VEHICLES[vid].schedule.find(x => x.id === id); return s ? s.label : id;
+}
+
+function renderHistory() {
+  const v = VEHICLES[S.active];
+  const all = logsFor(v.id).sort((a, b) => (b.date || "").localeCompare(a.date || "") || (Number(b.miles) || 0) - (Number(a.miles) || 0));
+  const filters = [["all", "All"], ["oil", "Oil"], ["brakes", "Brakes"], ["sched", "Scheduled items"], ["other", "Other"]];
+  $("filter").innerHTML = filters.map(([k, l]) => `<button type="button" data-filter="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join("");
+  const list = all.filter(l => {
+    const it = l.items || [];
+    if (S.filter === "all") return true;
+    if (S.filter === "oil") return it.includes("oil");
+    if (S.filter === "brakes") return it.includes("brakes") || it.includes("brake_fluid");
+    if (S.filter === "sched") return it.some(x => v.schedule.some(s => s.id === x));
+    return it.length === 0;
+  });
+  const spent = all.reduce((t, l) => t + (Number(l.cost) || 0), 0);
+  $("histCount").textContent = all.length ? `${all.length} entr${all.length === 1 ? "y" : "ies"}${spent ? " · $" + spent.toLocaleString("en-US", { maximumFractionDigits: 0 }) + " spent" : ""}` : "";
+  if (!S.loaded && !all.length) { $("history").innerHTML = `<div class="empty">Loading your service history…</div>`; return; }
+  if (!all.length) { $("history").innerHTML = `<div class="empty">No service logged for the ${esc(v.name)} yet. Tap <b>Log service</b> to add one. You can also add past work from receipts so "What's due" knows when each item was last done.</div>`; return; }
+  if (!list.length) { $("history").innerHTML = `<div class="empty">Nothing matches this filter.</div>`; return; }
+  $("history").innerHTML = list.map(l => {
+    const chips = (l.items || []).map(id => `<span class="chip">${esc(itemLabel(v.id, id))}</span>`).join("");
+    const confirming = S.confirmDelete === l.id;
+    return `<article class="log">
+      <div class="log-top"><span class="log-title">${esc(l.title || "Service")}</span><span class="log-date">${fmtDate(l.date)}</span></div>
+      <div class="log-sub num">
+        ${l.miles ? `<span>${fmtMi(l.miles)} mi</span>` : ""}
+        ${l.minder ? `<span>Minder <span class="code">${esc(l.minder)}</span></span>` : ""}
+        ${l.shop ? `<span>${esc(l.shop)}</span>` : ""}
+        ${l.cost ? `<span>$${Number(l.cost).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>` : ""}
+      </div>
+      ${chips ? `<div class="chips">${chips}</div>` : ""}
+      ${l.notes ? `<p class="log-notes">${esc(l.notes)}</p>` : ""}
+      ${S.readOnly ? "" : `<div class="log-actions">
+        ${confirming
+          ? `<span class="label" style="align-self:center">Delete this entry?</span><button class="btn ghost" type="button" data-act="del-cancel">Keep</button><button class="btn danger" type="button" data-act="del-yes" data-id="${l.id}">Delete</button>`
+          : `<button class="btn ghost" type="button" data-act="edit" data-id="${l.id}">Edit</button><button class="btn ghost" type="button" data-act="del" data-id="${l.id}">Delete</button>`}
+      </div>`}
+    </article>`;
+  }).join("");
+}
+
+// ---------- Log sheet ----------
+function openSheet(prefill = {}) {
+  const vid = prefill.vehicle || S.active, v = VEHICLES[vid];
+  const sel = new Set(prefill.items || []);
+  const chk = (id, label, extra = "") => `<label><input type="checkbox" name="items" value="${id}" ${sel.has(id) ? "checked" : ""}>${esc(label)}${extra}</label>`;
+  $("scrim").innerHTML = `<form class="sheet" id="logForm" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head"><h2 id="sheetTitle">${prefill.id ? "Edit service" : "Log service"} · ${esc(v.name)}</h2><button class="btn ghost" type="button" data-act="close">Close</button></div>
+    <div class="row2">
+      <label class="field"><span>Date</span><input id="fDate" type="date" required value="${esc(prefill.date || today())}"></label>
+      <label class="field"><span>Odometer (mi)</span><input id="fMiles" type="number" inputmode="numeric" min="0" step="1" placeholder="${odometer(vid) ? fmtMi(odometer(vid)) : "e.g. 84210"}" value="${prefill.miles ?? ""}"></label>
+    </div>
+    <div class="field"><span>What was done</span>
+      <div class="checks-group">
+        <div class="checks">${COMMON_ITEMS.map(c => chk(c.id, c.label)).join("")}</div>
+        <div class="checks">${v.schedule.map(s => chk(s.id, s.label)).join("")}</div>
+      </div>
+      <small>Check every item the visit covered. Checked items reset their countdown in "What's due".</small>
+    </div>
+    <label class="field"><span>Title <small>(optional)</small></span><input id="fTitle" type="text" maxlength="80" placeholder="e.g. 60k service, new tires, recall" value="${esc(prefill.title || "")}"></label>
+    ${v.minder ? `<label class="field"><span>Maintenance Minder code <small>(optional)</small></span><input id="fMinder" type="text" maxlength="12" placeholder="e.g. B12" value="${esc(prefill.minder || "")}" style="text-transform:uppercase"></label>` : ""}
+    <div class="row2">
+      <label class="field"><span>Shop</span><input id="fShop" type="text" maxlength="60" placeholder="DIY, dealer…" value="${esc(prefill.shop || "")}"></label>
+      <label class="field"><span>Cost ($)</span><input id="fCost" type="number" inputmode="decimal" min="0" step="0.01" value="${prefill.cost ?? ""}"></label>
+    </div>
+    <label class="field"><span>Notes</span><textarea id="fNotes" rows="3" maxlength="2000" placeholder="Parts, fluid brand, what to watch next time">${esc(prefill.notes || "")}</textarea></label>
+    <p class="form-error" id="fErr" hidden></p>
+    <div class="sheet-foot"><button class="btn" type="button" data-act="close">Cancel</button><button class="btn primary" type="submit" id="fSave">${prefill.id ? "Save changes" : "Save log"}</button></div>
+  </form>`;
+  $("scrim").dataset.vehicle = vid;
+  $("scrim").dataset.editId = prefill.id || "";
+  $("scrim").hidden = false;
+  document.body.style.overflow = "hidden";
+  setTimeout(() => $("fMiles").focus(), 50);
+}
+function closeSheet() { $("scrim").hidden = true; $("scrim").innerHTML = ""; document.body.style.overflow = ""; }
+
+async function saveLog(e) {
+  e.preventDefault();
+  const vid = $("scrim").dataset.vehicle, editId = $("scrim").dataset.editId;
+  const items = [...document.querySelectorAll('#logForm input[name="items"]:checked')].map(x => x.value);
+  const miles = $("fMiles").value ? Math.round(Number($("fMiles").value)) : null;
+  const title = $("fTitle").value.trim() || (items.length ? items.map(i => itemLabel(vid, i)).join(", ") : "");
+  const err = $("fErr");
+  if (!$("fDate").value) { err.textContent = "Add the date of the service."; err.hidden = false; return; }
+  if (!items.length && !title) { err.textContent = "Check at least one item or add a title so you can recognize this entry later."; err.hidden = false; return; }
+  const body = {
+    vehicle: vid, date: $("fDate").value, miles, items, title,
+    minder: $("fMinder") ? $("fMinder").value.trim().toUpperCase() : "",
+    shop: $("fShop").value.trim(), cost: $("fCost").value ? Number($("fCost").value) : null,
+    notes: $("fNotes").value.trim(), updatedAt: new Date().toISOString()
+  };
+  $("fSave").disabled = true;
+  try {
+    if (editId) {
+      const prev = S.logs.find(l => l.id === editId) || {};
+      await api("PUT", "/api/logs/" + encodeURIComponent(editId), { ...body, createdAt: prev.createdAt });
+    } else {
+      await api("POST", "/api/logs", body);
+    }
+    await load();
+    closeSheet(); toast(editId ? "Changes saved" : "Service logged");
+  } catch (ex) {
+    $("fSave").disabled = false;
+    if (ex.status === 401) return;
+    err.textContent = ex.message || "Couldn't save. Check your connection and try again.";
+    err.hidden = false;
+  }
+}
+
+async function saveVehicle(patch) {
+  const vid = S.active;
+  const body = { ...vdoc(vid), ...patch };
+  try { await api("PUT", "/api/vehicles/" + vid, body); S.vdocs[vid] = body; render(); return true; }
+  catch (ex) { if (ex.status !== 401) toast("Couldn't save. Try again."); return false; }
+}
+
+// ---------- Server ----------
+async function api(method, url, body) {
+  let res;
+  try {
+    res = await fetch(url, { method, headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, credentials: "same-origin" });
+  } catch (e) {
+    throw Object.assign(new Error("Couldn't reach the server. Check your connection and try again."), { status: 0 });
+  }
+  if (res.status === 401) { showLogin(); throw Object.assign(new Error("Sign in required"), { status: 401 }); }
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    throw Object.assign(new Error(j.error || "Couldn't save. Try again."), { status: res.status });
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+async function load() {
+  const data = await api("GET", "/api/state");
+  S.logs = data.logs || [];
+  S.vdocs = data.vehicles || {};
+  S.loaded = true;
+  $("syncState").textContent = "Synced";
+  $("banner").hidden = true;
+  render();
+}
+
+function showLogin() {
+  $("login").hidden = false;
+  $("syncState").textContent = "Signed out";
+  setTimeout(() => $("passcode").focus(), 30);
+}
+
+$("loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("loginBtn").disabled = true; $("loginErr").hidden = true;
+  try {
+    const res = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ passcode: $("passcode").value }), credentials: "same-origin" });
+    if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || "Couldn't sign in."); }
+    $("login").hidden = true; $("passcode").value = "";
+    await load();
+  } catch (ex) {
+    $("loginErr").textContent = ex.message || "Couldn't sign in. Try again."; $("loginErr").hidden = false;
+  } finally { $("loginBtn").disabled = false; }
+});
+
+let toastT;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2200); }
+
+// ---------- Events ----------
+document.addEventListener("click", async e => {
+  const tab = e.target.closest("[data-v]");
+  if (tab) { S.active = tab.dataset.v; S.editingOdo = false; S.confirmDelete = null; S.filter = "all"; try { localStorage.setItem("sb.active", S.active); } catch (x) {} render(); window.scrollTo({ top: 0 }); return; }
+  const f = e.target.closest("[data-filter]");
+  if (f) { S.filter = f.dataset.filter; renderHistory(); return; }
+  const a = e.target.closest("[data-act]");
+  if (!a) { if (e.target === $("scrim")) closeSheet(); return; }
+  const act = a.dataset.act;
+  if (act === "odo-edit") { S.editingOdo = true; renderOdo(); setTimeout(() => $("odoInput") && $("odoInput").focus(), 30); }
+  else if (act === "odo-cancel") { S.editingOdo = false; renderOdo(); }
+  else if (act === "why") { const id = a.dataset.item; S.openWhy.has(id) ? S.openWhy.delete(id) : S.openWhy.add(id); renderSched(); }
+  else if (act === "log-item") { openSheet({ items: [a.dataset.item] }); }
+  else if (act === "close") { closeSheet(); }
+  else if (act === "edit") { const l = S.logs.find(x => x.id === a.dataset.id); if (l) openSheet(l); }
+  else if (act === "del") { S.confirmDelete = a.dataset.id; renderHistory(); }
+  else if (act === "del-cancel") { S.confirmDelete = null; renderHistory(); }
+  else if (act === "del-yes") {
+    try { await api("DELETE", "/api/logs/" + encodeURIComponent(a.dataset.id)); S.confirmDelete = null; await load(); toast("Entry deleted"); }
+    catch (x) { S.confirmDelete = null; renderHistory(); if (x.status !== 401) toast("Couldn't delete. Try again."); }
+  }
+});
+document.addEventListener("submit", async e => {
+  if (e.target.id === "logForm") return saveLog(e);
+  if (e.target.id === "odoForm") {
+    e.preventDefault();
+    const n = Math.round(Number($("odoInput").value));
+    if (!n || n < 0) return;
+    if (await saveVehicle({ odometer: n, odometerDate: today() })) { S.editingOdo = false; toast("Odometer updated"); }
+  }
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "prefProfile") saveVehicle({ profile: e.target.value });
+  if (e.target.id === "prefInService" && e.target.value) saveVehicle({ inService: e.target.value });
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("scrim").hidden) closeSheet(); });
+$("addBtn").addEventListener("click", () => { if (S.readOnly) return; openSheet(); });
+
+// ---------- QR code (desktop only, via CSS) ----------
+try {
+  const qr = qrcode(0, "M"); qr.addData(location.origin + "/"); qr.make();
+  $("qrImg").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+} catch (e) { $("qrCard").hidden = true; }
+
+// ---------- Data ----------
+render();
+function loadWithRetry(attempt = 0) {
+  load().catch(ex => {
+    if (ex.status === 401) return;
+    // A free Render instance can take ~30 s to wake up, so keep trying for a bit.
+    $("syncState").textContent = attempt < 6 ? "Waking server…" : "Offline";
+    if (attempt < 6) setTimeout(() => loadWithRetry(attempt + 1), 5000);
+    else { $("banner").textContent = "Couldn't reach the server. Pull down to refresh, or try again in a minute."; $("banner").hidden = false; }
+  });
+}
+loadWithRetry();
+document.addEventListener("visibilitychange", () => { if (!document.hidden && S.loaded && $("scrim").hidden) load().catch(() => {}); });
+</script>

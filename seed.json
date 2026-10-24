@@ -1,0 +1,306 @@
+{
+  "vehicles": {
+    "equinox": {
+      "odometer": 63580,
+      "odometerDate": "2026-10-24"
+    },
+    "odyssey": {
+      "odometer": 46021,
+      "odometerDate": "2026-10-24"
+    }
+  },
+  "logs": [
+    {
+      "id": "csv-1",
+      "cost": 141.38,
+      "createdAt": "2024-08-20T00:00:00",
+      "date": "2024-08-20",
+      "items": [
+        "cabin_filter",
+        "oil"
+      ],
+      "miles": 24826,
+      "minder": "",
+      "notes": "",
+      "shop": "Grease Monkey",
+      "source": "csv",
+      "title": "Cabin Air Filter, oil change",
+      "updatedAt": "2024-08-20T00:00:00",
+      "vehicle": "odyssey"
+    },
+    {
+      "id": "csv-10",
+      "cost": 87.26,
+      "createdAt": "2025-04-12T00:00:00",
+      "date": "2025-04-12",
+      "items": [
+        "oil"
+      ],
+      "miles": 31655,
+      "minder": "",
+      "notes": "",
+      "shop": "",
+      "source": "csv",
+      "title": "Oil change",
+      "updatedAt": "2025-04-12T00:00:00",
+      "vehicle": "odyssey"
+    },
+    {
+      "id": "csv-11",
+      "cost": 766,
+      "createdAt": "2025-05-03T00:00:00",
+      "date": "2025-05-03",
+      "items": [
+        "battery"
+      ],
+      "miles": 32250,
+      "minder": "",
+      "notes": "Parts $537.00, labor $229.00",
+      "shop": "Honda Libertyville",
+      "source": "csv",
+      "title": "New Battery - new front tires",
+      "updatedAt": "2025-05-03T00:00:00",
+      "vehicle": "odyssey"
+    },
+    {
+      "id": "csv-12",
+      "cost": 74.31,
+      "createdAt": "2025-12-26T00:00:00",
+      "date": "2025-12-26",
+      "items": [
+        "oil",
+        "engine_air"
+      ],
+      "miles": 57599,
+      "minder": "",
+      "notes": "",
+      "shop": "",
+      "title": "Oil service",
+      "updatedAt": "2026-10-24T22:25:51.206Z",
+      "vehicle": "equinox"
+    },
+    {
+      "id": "csv-13",
+      "cost": 1757.28,
+      "createdAt": "2025-05-14T00:00:00",
+      "date": "2025-05-14",
+      "items": [
+        "brakes"
+      ],
+      "miles": 52500,
+      "minder": "",
+      "notes": "",
+      "shop": "Autolab",
+      "source": "csv",
+      "title": "Tires, Brake pad, Brake rotor",
+      "updatedAt": "2025-05-14T00:00:00",
+      "vehicle": "equinox"
+    },
+    {
+      "id": "csv-14",
+      "cost": 93.26,
+      "createdAt": "2026-01-03T00:00:00",
+      "date": "2026-01-03",
+      "items": [
+        "oil"
+      ],
+      "miles": 38626,
+      "minder": "",
+      "notes": "",
+      "shop": "Grease Monkey",
+      "source": "csv",
+      "title": "Oil & filter",
+      "updatedAt": "2026-01-03T00:00:00",
+      "vehicle": "odyssey"
+    },
+    {
+      "id": "csv-15",
+      "cost": 72.9,
+      "createdAt": "2026-06-05T20:48:59",
+      "date": "2026-06-05",
+      "items": [],
+      "miles": 42619,
+      "minder": "",
+      "notes": "",
+      "shop": "Rouse",
+      "source": "csv",
+      "title": "Tire patching 2x tires",
+      "updatedAt": "2026-06-05T20:48:59",
+      "vehicle": "odyssey"
+    },
+    {
+      "id": "csv-16",
+      "cost": 211.24,
+      "createdAt": "2026-09-19T14:38:22",
+      "date": "2026-09-19",
+      "items": [
+        "oil",
+        "cabin_filter",
+        "brake_fluid",
+        "engine_air"
+      ],
+      "miles": 46021,
+      "minder": "",
+      "notes": "",
+      "shop": "Grease Monkey",
+      "source": "csv",
+      "title": "Oil & filter, Cabin air filter, Brake fluid, Air filter",
+      "updatedAt": "2026-09-19T14:38:22",
+      "vehicle": "odyssey"
+    },
+    {
+      "id": "csv-17",
+      "cost": 80,
+      "createdAt": "2023-01-21T00:00:00",
+      "date": "2023-01-21",
+      "items": [
+        "oil"
+      ],
+      "miles": 8776,
+      "minder": "",
+      "notes": "",
+      "shop": "",
+      "source": "csv",
+      "title": "Oil & filter",
+      "updatedAt": "2023-01-21T00:00:00",
+      "vehicle": "odyssey"
+    },
+    {
+      "id": "csv-18",
+      "cost": 159.4,
+      "createdAt": "2026-10-24T14:11:49",
+      "date": "2026-10-24",
+      "items": [
+        "cabin_filter",
+        "oil"
+      ],
+      "miles": 63580,
+      "minder": "",
+      "notes": "",
+      "shop": "Grease Monkey",
+      "source": "csv",
+      "title": "Cabin air filter, Oil & filter",
+      "updatedAt": "2026-10-24T14:11:49",
+      "vehicle": "equinox"
+    },
+    {
+      "id": "csv-2",
+      "cost": 141.38,
+      "createdAt": "2023-11-26T00:00:00",
+      "date": "2023-11-26",
+      "items": [
+        "oil",
+        "engine_air"
+      ],
+      "miles": 16814,
+      "minder": "",
+      "notes": "",
+      "shop": "Grease Monkey",
+      "source": "csv",
+      "title": "Oil Change, Air filter",
+      "updatedAt": "2023-11-26T00:00:00",
+      "vehicle": "odyssey"
+    },
+    {
+      "id": "csv-4",
+      "cost": 220,
+      "createdAt": "2025-03-23T00:00:00",
+      "date": "2025-03-23",
+      "items": [
+        "battery"
+      ],
+      "miles": 51585,
+      "minder": "",
+      "notes": "",
+      "shop": "O’Reily",
+      "title": "Battery",
+      "updatedAt": "2026-10-24T22:24:59.978Z",
+      "vehicle": "equinox"
+    },
+    {
+      "id": "csv-5",
+      "cost": 68.13,
+      "createdAt": "2025-04-05T00:00:00",
+      "date": "2025-04-05",
+      "items": [
+        "oil"
+      ],
+      "miles": 51892,
+      "minder": "",
+      "notes": "",
+      "shop": "Grease Monkey",
+      "source": "csv",
+      "title": "Oil Change",
+      "updatedAt": "2025-04-05T00:00:00",
+      "vehicle": "equinox"
+    },
+    {
+      "id": "csv-6",
+      "cost": 68.13,
+      "createdAt": "2023-12-19T00:00:00",
+      "date": "2023-12-19",
+      "items": [
+        "oil"
+      ],
+      "miles": 46711,
+      "minder": "",
+      "notes": "",
+      "shop": "",
+      "source": "csv",
+      "title": "Oil change",
+      "updatedAt": "2023-12-19T00:00:00",
+      "vehicle": "equinox"
+    },
+    {
+      "id": "csv-7",
+      "cost": 68.13,
+      "createdAt": "2022-07-09T00:00:00",
+      "date": "2022-07-09",
+      "items": [
+        "oil"
+      ],
+      "miles": 41879,
+      "minder": "",
+      "notes": "",
+      "shop": "",
+      "source": "csv",
+      "title": "Oil change",
+      "updatedAt": "2022-07-09T00:00:00",
+      "vehicle": "equinox"
+    },
+    {
+      "id": "csv-8",
+      "cost": 68.13,
+      "createdAt": "2020-07-31T00:00:00",
+      "date": "2020-07-31",
+      "items": [
+        "oil"
+      ],
+      "miles": 36238,
+      "minder": "",
+      "notes": "",
+      "shop": "",
+      "source": "csv",
+      "title": "Oil change",
+      "updatedAt": "2020-07-31T00:00:00",
+      "vehicle": "equinox"
+    },
+    {
+      "id": "csv-9",
+      "cost": 68.13,
+      "createdAt": "2020-09-05T00:00:00",
+      "date": "2020-09-05",
+      "items": [
+        "oil"
+      ],
+      "miles": 31079,
+      "minder": "",
+      "notes": "",
+      "shop": "",
+      "source": "csv",
+      "title": "Oil change",
+      "updatedAt": "2020-09-05T00:00:00",
+      "vehicle": "equinox"
+    }
+  ]
+}
