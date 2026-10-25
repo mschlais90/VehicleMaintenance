@@ -231,7 +231,7 @@ footer { color: var(--muted); font-size: .78rem; }
     <div class="history" id="history"></div>
   </section>
 
-  <footer>Intervals follow GM's published schedule for the Equinox and Honda's Maintenance Minder for the Odyssey. Mileages for Minder items are estimates. When the van's dash shows a Minder code, that code takes priority. Oil and brake pads are logged here but not tracked in "What's due".</footer>
+  <footer>Intervals follow GM's published schedule for the Equinox and Honda's Maintenance Minder for the Odyssey. Mileages for Minder items are estimates. When the van's dash shows a Minder code, that code takes priority. Oil changes are logged here but not tracked in "What's due".</footer>
 </div>
 
 <aside class="qr-card" id="qrCard" aria-label="Open on your phone">
@@ -269,6 +269,7 @@ const VEHICLES = {
       { id: "trans_fluid", label: "Transmission fluid", miles: 97500, severeMiles: 45000, src: "GM schedule", detail: "6-speed automatic. Change every 97,500 mi for normal driving, or every 45,000 mi for heavy city traffic, hot weather, hilly terrain, or towing. Use DEXRON-VI." },
       { id: "spark_plugs", label: "Spark plugs", miles: 97500, src: "GM schedule", detail: "Replace every 97,500 mi. The interval is the same for the 2.4L and the 3.6L V6." },
       { id: "evap", label: "Evaporative emissions check", miles: 120000, src: "GM schedule", detail: "Inspect the fuel and vapor lines, hoses, and connections every 120,000 mi." },
+      { id: "brakes", label: "Brake pads & rotors", miles: 50000, src: "Your interval", detail: "Inspect and replace pads, and rotors if needed, every 50,000 mi. Have them checked sooner if you hear squealing or grinding, or feel pulsing when you stop." },
       { id: "brake_fluid", label: "Brake fluid", months: 60, src: "GM schedule", detail: "Replace the brake fluid every 5 years, whatever the mileage. Brake fluid absorbs moisture over time, which lowers its boiling point and corrodes the ABS parts. Use DOT 3." },
       { id: "coolant", label: "Engine coolant", miles: 150000, months: 60, src: "GM schedule", detail: "Drain and refill the DEX-COOL every 150,000 mi or 5 years, whichever comes first. On a 2016 the time limit usually comes first." },
       { id: "drive_belt", label: "Accessory drive belt", miles: 150000, months: 120, src: "GM schedule", detail: "Inspect for cracks and wear every 150,000 mi or 10 years. Replace it if it squeals or shows cracks." }
@@ -292,6 +293,7 @@ const VEHICLES = {
       { id: "trans_fluid", code: "3", label: "Transmission fluid (10-speed)", miles: 30000, severeMiles: 25000, src: "Minder code 3", detail: "Minder code 3. This van has a 10-speed automatic. Use only Honda genuine ATF, because aftermarket fluid can cause shift problems." },
       { id: "spark_plugs", code: "4", label: "Spark plugs + valve clearance", miles: 105000, src: "Minder code 4", detail: "Minder code 4. Replace the spark plugs. Inspect valve clearance and adjust it only if the valves are noisy." },
       { id: "timing_belt", label: "Timing belt + water pump", miles: 105000, months: 84, severeMiles: 60000, src: "Honda schedule", detail: "The 3.5L V6 has a timing belt, and a broken belt can damage the engine. Replace it at 105,000 mi or 7 years, or at 60,000 mi if you tow or drive often in extreme heat. Replace the water pump and tensioner at the same time." },
+      { id: "brakes", label: "Brake pads & rotors", miles: 50000, src: "Your interval", detail: "Inspect and replace pads, and rotors if needed, every 50,000 mi. Have them checked sooner if you hear squealing or grinding, or feel pulsing when you stop." },
       { id: "brake_fluid", code: "7", label: "Brake fluid", months: 36, src: "Minder code 7", detail: "Minder code 7. Replace the brake fluid every 3 years, whatever the mileage. Use Honda DOT 3 brake fluid." },
       { id: "coolant", code: "5", label: "Engine coolant", miles: 60000, months: 60, firstMiles: 120000, firstMonths: 120, src: "Minder code 5", detail: "Minder code 5. The first change is at 120,000 mi or 10 years. After that, change it every 60,000 mi or 5 years. Use Honda Type 2 coolant." }
     ],
@@ -309,7 +311,6 @@ const VEHICLES = {
 };
 const COMMON_ITEMS = [
   { id: "oil", label: "Oil & filter" },
-  { id: "brakes", label: "Brakes (pads/rotors)" },
   { id: "battery", label: "Battery" },
   { id: "tire_rotation", label: "Tire rotation" }
 ];
