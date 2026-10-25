@@ -114,6 +114,7 @@ function cleanVehicle(body) {
   if (isDate(body && body.odometerDate)) out.odometerDate = body.odometerDate;
   if (body && ["normal", "severe"].includes(body.profile)) out.profile = body.profile;
   if (isDate(body && body.inService)) out.inService = body.inService;
+  if (body && ["awd", "fwd"].includes(body.drivetrain)) out.drivetrain = body.drivetrain;
   return out;
 }
 

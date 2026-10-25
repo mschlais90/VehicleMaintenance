@@ -261,8 +261,9 @@ footer { color: var(--muted); font-size: .78rem; }
 // firstMiles / firstMonths: first service when it differs from later ones. src: where the interval comes from.
 const VEHICLES = {
   equinox: {
-    id: "equinox", year: 2016, name: "Equinox", full: "2016 Chevrolet Equinox", defaultInService: "2015-10-01", minder: false,
+    id: "equinox", year: 2016, name: "Equinox", full: "2016 Chevrolet Equinox", defaultInService: "2015-10-01", minder: false, defaultDrivetrain: "awd",
     schedule: [
+      { id: "awd_fluids", awdOnly: true, label: "AWD fluids (transfer case + rear differential)", miles: 60000, months: 48, severeMiles: 30000, severeMonths: 24, src: "Haynes (GM lists no interval)", detail: "Drain and refill the transfer case (power transfer unit) at the front and the rear differential with 75W-90 synthetic gear oil. GM's schedule doesn't give a fixed interval, so this uses the Haynes manual's 60,000 mi or 4 years (half that for severe driving). Ask the shop to check both units for leaks at the same time." },
       { id: "cabin_filter", label: "Cabin air filter", miles: 22500, src: "GM schedule", detail: "Replace every 22,500 mi. Replace sooner in dusty areas or if airflow drops. The filter sits behind the glovebox." },
       { id: "engine_air", label: "Engine air filter", miles: 45000, src: "GM schedule", detail: "Replace every 45,000 mi. Inspect it at each oil change and replace sooner if it's dirty." },
       { id: "trans_fluid", label: "Transmission fluid", miles: 97500, severeMiles: 45000, src: "GM schedule", detail: "6-speed automatic. Change every 97,500 mi for normal driving, or every 45,000 mi for heavy city traffic, hot weather, hilly terrain, or towing. Use DEXRON-VI." },
@@ -276,7 +277,7 @@ const VEHICLES = {
       items: [
         "2.4L engines from this era are known for oil consumption. Check the dipstick every other fill-up, because the oil-life monitor doesn't measure oil level.",
         "The engine uses a timing chain, so there's no replacement interval. A rattle on cold start can mean the chain has stretched. Get it checked before it gets worse.",
-        "If the AWD system shudders or binds in tight turns, have the rear drive fluid inspected. GM doesn't list a fixed interval for it.",
+        "If the AWD system shudders or binds in tight turns, or you see gear oil dripping near the front passenger side, have the transfer case and rear differential checked. Their fluid breaking down is a common cause.",
         "GM's oil-life monitor sets oil change timing. Reset it after every oil change."
       ]
     }
@@ -338,6 +339,8 @@ function fmtSpan(days) {
 function vdoc(id) { return S.vdocs[id] || {}; }
 function profile(id) { return vdoc(id).profile || "normal"; }
 function inService(id) { return vdoc(id).inService || VEHICLES[id].defaultInService; }
+function drivetrain(id) { return vdoc(id).drivetrain || VEHICLES[id].defaultDrivetrain || null; }
+function scheduleFor(id) { return VEHICLES[id].schedule.filter(i => !i.awdOnly || drivetrain(id) === "awd"); }
 function logsFor(id) { return S.logs.filter(l => l.vehicle === id); }
 function odometer(id) {
   const vals = logsFor(id).map(l => Number(l.miles) || 0);
@@ -355,16 +358,17 @@ function status(vid, item) {
   const now = today();
   const last = lastFor(vid, item.id);
   const interval = (profile(vid) === "severe" && item.severeMiles) || item.miles || null;
+  const months = (profile(vid) === "severe" && item.severeMonths) || item.months || null;
   let baseMiles, baseDate, dueMiles = null, dueDate = null;
   if (last) {
     baseMiles = Number(last.miles) || 0; baseDate = last.date;
     if (interval) dueMiles = baseMiles + interval;
-    if (item.months) dueDate = addMonths(baseDate, item.months);
+    if (months) dueDate = addMonths(baseDate, months);
   } else {
     baseMiles = 0; baseDate = inService(vid);
     const fm = item.firstMiles ? (profile(vid) === "severe" && item.severeMiles ? Math.min(item.firstMiles, item.severeMiles) : item.firstMiles) : interval;
     if (fm) dueMiles = fm;
-    const fmo = item.firstMonths || item.months;
+    const fmo = item.firstMonths || months;
     if (fmo) dueDate = addMonths(baseDate, fmo);
   }
   const remMiles = dueMiles != null && odo != null ? dueMiles - odo : null;
@@ -381,7 +385,7 @@ function status(vid, item) {
   const pastNew = level === "overdue" && !last;
   if (!last && level !== "overdue") level = level === "soon" ? "soon" : "none";
   if (pastNew) level = "overdue";
-  return { last, dueMiles, dueDate, remMiles, remDays, pct, level, noRecord: !last, interval, odoKnown: odo != null };
+  return { last, dueMiles, dueDate, remMiles, remDays, pct, level, noRecord: !last, interval, months, odoKnown: odo != null };
 }
 
 // ---------- Rendering ----------
@@ -391,7 +395,7 @@ function render() {
 
 function renderSwitch() {
   $("switch").innerHTML = Object.values(VEHICLES).map(v => {
-    const due = v.schedule.map(i => status(v.id, i).level).filter(l => l === "overdue" || l === "soon").length;
+    const due = scheduleFor(v.id).map(i => status(v.id, i).level).filter(l => l === "overdue" || l === "soon").length;
     return `<button role="tab" type="button" data-v="${v.id}" aria-selected="${S.active === v.id}">
       <span class="yr">${v.year} ${v.id === "equinox" ? "Chevrolet" : "Honda"}</span>
       <span class="nm">${esc(v.name)}</span>
@@ -422,8 +426,14 @@ function renderOdo() {
         <button class="btn ghost" type="button" data-act="odo-cancel">Cancel</button>
       </form>` : `<div class="inline-form"><button class="btn" type="button" data-act="odo-edit" ${S.readOnly ? "disabled" : ""}>Update odometer</button></div>`}
     <details class="prefs">
-      <summary>Vehicle settings · ${profile(v.id) === "severe" ? "Severe" : "Normal"} driving</summary>
+      <summary>Vehicle settings · ${drivetrain(v.id) ? drivetrain(v.id).toUpperCase() + " · " : ""}${profile(v.id) === "severe" ? "Severe" : "Normal"} driving</summary>
       <div class="prefs-grid">
+        ${v.defaultDrivetrain ? `<label>Drivetrain
+          <select id="prefDrivetrain" ${S.readOnly ? "disabled" : ""}>
+            <option value="awd" ${drivetrain(v.id) === "awd" ? "selected" : ""}>AWD</option>
+            <option value="fwd" ${drivetrain(v.id) === "fwd" ? "selected" : ""}>FWD</option>
+          </select>
+        </label>` : ""}
         <label>Driving conditions
           <select id="prefProfile" ${S.readOnly ? "disabled" : ""}>
             <option value="normal" ${profile(v.id) === "normal" ? "selected" : ""}>Normal</option>
@@ -440,7 +450,7 @@ function renderOdo() {
 
 function renderSched() {
   const v = VEHICLES[S.active];
-  const rows = v.schedule.map(i => ({ i, s: status(v.id, i) }))
+  const rows = scheduleFor(v.id).map(i => ({ i, s: status(v.id, i) }))
     .sort((a, b) => ORDER[a.s.level] - ORDER[b.s.level] || b.s.pct - a.s.pct);
   const odoKnown = odometer(v.id) != null;
   $("schedNote").textContent = odoKnown ? "Sorted by urgency" : "Set the odometer to see mileage items";
@@ -458,7 +468,7 @@ function renderSched() {
     right = dueParts.length ? "Due " + dueParts.join(" or ") : "";
     const lastTxt = s.last ? `Last done ${fmtDate(s.last.date)}${s.last.miles ? " at " + fmtMi(s.last.miles) + " mi" : ""}` : "No record. Due date assumes it hasn't been done since new.";
     const pill = s.noRecord && s.level === "overdue" ? "Likely due" : PILL[s.level];
-    const intervalTxt = [i.miles ? (s.interval !== i.miles ? `${fmtMi(s.interval)} mi (severe)` : `${fmtMi(i.miles)} mi`) : null, i.months ? (i.months % 12 === 0 ? (i.months / 12) + " yr" : i.months + " mo") : null].filter(Boolean).join(" / ");
+    const intervalTxt = [i.miles ? (s.interval !== i.miles ? `${fmtMi(s.interval)} mi (severe)` : `${fmtMi(i.miles)} mi`) : null, s.months ? (s.months % 12 === 0 ? (s.months / 12) + " yr" : s.months + " mo") : null].filter(Boolean).join(" / ");
     return `<div class="item">
       <div class="name">${esc(i.label)} ${i.code ? `<span class="code" title="Maintenance Minder sub-code">${i.code}</span>` : ""}
         <small>${esc(intervalTxt)} · ${esc(i.src)}</small></div>
@@ -539,7 +549,7 @@ function openSheet(prefill = {}) {
     <div class="field"><span>What was done</span>
       <div class="checks-group">
         <div class="checks">${COMMON_ITEMS.map(c => chk(c.id, c.label)).join("")}</div>
-        <div class="checks">${v.schedule.map(s => chk(s.id, s.label)).join("")}</div>
+        <div class="checks">${scheduleFor(vid).map(s => chk(s.id, s.label)).join("")}</div>
       </div>
       <small>Check every item the visit covered. Checked items reset their countdown in "What's due".</small>
     </div>
@@ -683,6 +693,7 @@ document.addEventListener("submit", async e => {
 document.addEventListener("change", e => {
   if (e.target.id === "prefProfile") saveVehicle({ profile: e.target.value });
   if (e.target.id === "prefInService" && e.target.value) saveVehicle({ inService: e.target.value });
+  if (e.target.id === "prefDrivetrain") saveVehicle({ drivetrain: e.target.value });
 });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("scrim").hidden) closeSheet(); });
 $("addBtn").addEventListener("click", () => { if (S.readOnly) return; openSheet(); });
